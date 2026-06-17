@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BRYC PSSG Case</title>
+<style>
+  :root {
+    --bg: #0b0d0e;
+    --surface: #151a1c;
+    --surface-2: #1e2629;
+    --accent: #44d19d;
+    --accent-2: #f0b35b;
+    --accent-3: #74a7ff;
+    --text: #f5f4ee;
+    --muted: #9ca5a8;
+    --line: rgba(245,244,238,0.12);
+    --radius: 8px;
+    --slide-max: 760px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.32;
+    background:
+      linear-gradient(135deg, rgba(68,209,157,0.10), transparent 34%),
+      linear-gradient(315deg, rgba(240,179,91,0.10), transparent 30%),
+      radial-gradient(circle at 50% 50%, rgba(116,167,255,0.08), transparent 36%);
+  }
+
+  #progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.10);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.25s ease;
+  }
+
+  #deck {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 22px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  .slide-inner {
+    width: 100%;
+    max-width: var(--slide-max);
+  }
+
+  .slide-title .slide-inner {
+    text-align: left;
+  }
+
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .kicker::before {
+    content: "";
+    width: 26px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(36px, 10vw, 74px);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    max-width: 820px;
+  }
+
+  h2 {
+    font-size: clamp(26px, 7vw, 48px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    color: var(--accent-2);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: var(--muted);
+    font-size: clamp(16px, 3.8vw, 20px);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+
+  strong { color: var(--text); }
+
+  .subtitle {
+    margin-top: 18px;
+    max-width: 650px;
+    font-size: clamp(17px, 4vw, 22px);
+  }
+
+  .statement {
+    font-size: clamp(23px, 6vw, 42px);
+    line-height: 1.14;
+    color: var(--text);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    list-style: none;
+  }
+
+  li {
+    background: rgba(21,26,28,0.86);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    color: var(--text);
+    font-size: clamp(14px, 3.35vw, 17px);
+    line-height: 1.42;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .tag {
+    display: inline-flex;
+    color: var(--text);
+    background: rgba(68,209,157,0.12);
+    border: 1px solid rgba(68,209,157,0.32);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .cell {
+    min-height: 108px;
+    background: rgba(21,26,28,0.88);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .cell-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .cell-value {
+    font-size: clamp(15px, 3.4vw, 19px);
+    line-height: 1.28;
+    font-weight: 700;
+  }
+
+  .callout {
+    color: var(--accent);
+    font-size: clamp(58px, 18vw, 120px);
+    line-height: 0.9;
+    font-weight: 850;
+    letter-spacing: -0.05em;
+  }
+
+  .callout-label {
+    margin-top: 12px;
+    color: var(--text);
+    font-size: clamp(18px, 5vw, 30px);
+    line-height: 1.2;
+    font-weight: 750;
+  }
+
+  .pathway {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin-top: 20px;
+  }
+
+  .path-step {
+    position: relative;
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 13px 15px 13px 18px;
+    font-weight: 700;
+  }
+
+  .path-step:nth-child(2) { border-left-color: var(--accent-3); }
+  .path-step:nth-child(3) { border-left-color: var(--accent-2); }
+  .path-step:nth-child(4) { border-left-color: var(--accent); }
+
+  .split {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .state-visual {
+    min-height: 360px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background:
+      linear-gradient(150deg, rgba(68,209,157,0.14), rgba(116,167,255,0.06)),
+      var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .map-shape {
+    width: 100%;
+    min-height: 220px;
+    border: 1px solid rgba(245,244,238,0.14);
+    background:
+      linear-gradient(90deg, transparent 48%, rgba(245,244,238,0.12) 48% 49%, transparent 49%),
+      linear-gradient(0deg, transparent 48%, rgba(245,244,238,0.12) 48% 49%, transparent 49%),
+      rgba(11,13,14,0.42);
+    border-radius: 55% 45% 42% 58% / 38% 55% 45% 62%;
+    position: relative;
+  }
+
+  .pin {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--accent-2);
+    box-shadow: 0 0 0 7px rgba(240,179,91,0.17);
+  }
+
+  .pin-a { left: 58%; top: 56%; }
+  .pin-b { left: 41%; top: 38%; background: var(--accent); box-shadow: 0 0 0 7px rgba(68,209,157,0.17); }
+  .pin-c { left: 70%; top: 30%; background: var(--accent-3); box-shadow: 0 0 0 7px rgba(116,167,255,0.17); }
+
+  .note {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  #nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--line);
+    background: rgba(11,13,14,0.84);
+    z-index: 2;
+  }
+
+  .nav-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.24;
+    cursor: default;
+  }
+
+  #counter {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 640px) {
+    .grid, .split { grid-template-columns: 1fr; }
+    .cell { min-height: auto; }
+    .state-visual { min-height: 260px; }
+    .map-shape { min-height: 150px; }
+  }
+</style>
+</head>
+<body>
+<div id="progress-bar"><div id="progress-fill"></div></div>
+
+<div id="deck">
+  <section class="slide slide-title active">
+    <div class="slide-inner">
+      <div class="kicker">PSSG grant case</div>
+      <h1>Pathway and persistence infrastructure for Louisiana students</h1>
+      <p class="subtitle">BRYC is the proof site. The opportunity is statewide.</p>
+      <div class="tag-row">
+        <span class="tag">Postsecondary success</span>
+        <span class="tag">Career pathways</span>
+        <span class="tag">Human-in-the-loop AI</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">The best fit</div>
+      <h2>Postsecondary Student Success Grant</h2>
+      <div class="grid">
+        <div class="cell">
+          <div class="cell-label">Competition</div>
+          <div class="cell-value">FY2026 PSSG, 84.116M</div>
+        </div>
+        <div class="cell">
+          <div class="cell-label">Best lane</div>
+          <div class="cell-value">Early Phase: demonstrate a rationale</div>
+        </div>
+        <div class="cell">
+          <div class="cell-label">Primary priority</div>
+          <div class="cell-value">College-to-career pathways and supports</div>
+        </div>
+        <div class="cell">
+          <div class="cell-label">Grant-funded bridge</div>
+          <div class="cell-value">Recommendation -> persistence -> completion</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <p class="statement"><strong>Do not pitch this as an AI app.</strong> Pitch it as postsecondary success infrastructure, enabled by AI and governed by advisors.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner split">
+      <div>
+        <div class="kicker">Why Louisiana</div>
+        <h2>The proof starts in Baton Rouge. The assets are statewide.</h2>
+        <p>BRYC anchors implementation, but the pathway data, aid rules, colleges, apprenticeships, credentials, and workforce signals are Louisiana-wide.</p>
+      </div>
+      <div class="state-visual" aria-label="Stylized Louisiana pathway map">
+        <div class="map-shape">
+          <span class="pin pin-a"></span>
+          <span class="pin pin-b"></span>
+          <span class="pin pin-c"></span>
+        </div>
+        <div class="note">Baton Rouge as proof site. Louisiana as the student-success opportunity surface.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">What is already built</div>
+      <h2>The scarce part exists</h2>
+      <ul>
+        <li>Canonical student profile with academic, family, career, preference, and narrative context.</li>
+        <li>Recommendation engine for institutions, programs, scholarships, apprenticeships, and short-term programs.</li>
+        <li>Advisor review, customization, publication, and student-facing recommendation links.</li>
+        <li>Transcript/GPA processing, meeting capture, and transcript-analysis review flows.</li>
+        <li>Event-sourced audit trail for profile changes, recommendations, edits, and advisor decisions.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Repo evidence</div>
+      <h2>The engine scores fit, not just interest</h2>
+      <div class="grid">
+        <div class="cell"><div class="cell-label">Academic</div><div class="cell-value">GPA, ACT, transcript, WorkKeys</div></div>
+        <div class="cell"><div class="cell-label">Career</div><div class="cell-value">Career fields, Holland Code, goals</div></div>
+        <div class="cell"><div class="cell-label">Financial</div><div class="cell-value">TOPS, tuition, scholarships, affordability</div></div>
+        <div class="cell"><div class="cell-label">Outcomes</div><div class="cell-value">Wages, pathway fit, outcome quality</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Statewide data spine</div>
+      <h2>Louisiana-specific pathway intelligence</h2>
+      <ul>
+        <li>Louisiana program catalog with embeddings.</li>
+        <li>CareerOneStop Louisiana workforce data.</li>
+        <li>CIP-SOC crosswalk for education-to-career mapping.</li>
+        <li>Louisiana occupation wages and career outcome signals.</li>
+        <li>Scholarship, apprenticeship, and short-term credential recommendations.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Trust model</div>
+      <h2>Human advisors stay in control</h2>
+      <ul>
+        <li>AI generates the pool; advisors decide what becomes guidance.</li>
+        <li>Advisors can customize selections and add local knowledge.</li>
+        <li>Transcript analysis suggests updates; advisors accept or reject.</li>
+        <li>Every meaningful action becomes implementation evidence.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">The honest gap</div>
+      <h2>PSSG funds the missing persistence layer</h2>
+      <div class="pathway">
+        <div class="path-step">1. Better-fit pathway recommendation</div>
+        <div class="path-step">2. Advisor-reviewed plan</div>
+        <div class="path-step">3. Application, acceptance, enrollment</div>
+        <div class="path-step">4. Persistence, credits, transfer, credential, career</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Evaluation-ready</div>
+      <h2>The event trail is the evaluator's friend</h2>
+      <ul>
+        <li>Which recommendation was generated.</li>
+        <li>What the advisor changed before publication.</li>
+        <li>What the student received.</li>
+        <li>Which follow-ups, cases, and interventions occurred.</li>
+        <li>Which outcomes followed over time.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">What to add</div>
+      <h2>The proposal should fund five buildouts</h2>
+      <ul>
+        <li>Outcome tracking: enrollment, credits, retention, transfer, completion.</li>
+        <li>Advisor follow-up workflows after high-school graduation.</li>
+        <li>Recommendation feedback: edit/remove reason and student choice reason.</li>
+        <li>Postsecondary and workforce data-sharing partnerships.</li>
+        <li>Independent evaluation aligned to early-phase evidence building.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="callout">Bottom line</div>
+      <div class="callout-label">BRYC has the pathway engine. PSSG funds the persistence engine.</div>
+      <p class="subtitle">The case is not speculative software. It is Louisiana student-success infrastructure growing out of a live proof site.</p>
+    </div>
+  </section>
+</div>
+
+<nav id="nav">
+  <button class="nav-btn" id="btn-prev" onclick="go(-1)" aria-label="Previous">&larr;</button>
+  <span id="counter">1 / 12</span>
+  <button class="nav-btn" id="btn-next" onclick="go(1)" aria-label="Next">&rarr;</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll(".slide");
+  let cur = 0;
+  let startX = 0;
+
+  function render() {
+    slides.forEach((s, i) => {
+      s.classList.remove("active", "prev");
+      if (i === cur) s.classList.add("active");
+      else if (i < cur) s.classList.add("prev");
+    });
+    document.getElementById("counter").textContent = `${cur + 1} / ${slides.length}`;
+    document.getElementById("progress-fill").style.width = `${((cur + 1) / slides.length) * 100}%`;
+    document.getElementById("btn-prev").disabled = cur === 0;
+    document.getElementById("btn-next").disabled = cur === slides.length - 1;
+  }
+
+  function go(dir) {
+    const next = cur + dir;
+    if (next >= 0 && next < slides.length) {
+      cur = next;
+      render();
+    }
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") go(1);
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") go(-1);
+  });
+
+  document.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+
+  document.addEventListener("touchend", e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  });
+
+  render();
+</script>
+</body>
+</html>
